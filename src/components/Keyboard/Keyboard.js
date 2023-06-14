@@ -2,12 +2,7 @@ import { View, Text, Pressable } from "react-native";
 import { keys, ENTER, CLEAR, colors } from "../../constants";
 import styles, { keyWidth } from "./Keyboard.styles";
 
-const Keyboard = ({
-  onKeyPressed = () => {},
-  greenCaps = [],
-  yellowCaps = [],
-  greyCaps = [],
-}) => {
+const Keyboard = ({ onKeyPressed = () => {}, greenCaps = [], yellowCaps = [], greyCaps = [] }) => {
   const isLongButton = (key) => {
     return key === ENTER || key === CLEAR;
   };
@@ -37,7 +32,7 @@ const Keyboard = ({
               style={[
                 styles.key,
                 isLongButton(key) ? { width: keyWidth * 1.4 } : {},
-                { backgroundColor: getKeyBGColor(key) },
+                { backgroundColor: getKeyBGColor(key) }
               ]}
             >
               <Text style={styles.keyText}>{key.toUpperCase()}</Text>

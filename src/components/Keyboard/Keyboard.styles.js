@@ -8,12 +8,12 @@ const keyHeight = keyWidth * 1.3;
 export default StyleSheet.create({
   keyboard: {
     alignSelf: "stretch",
-    marginTop: "auto",
+    marginTop: "auto"
   },
   row: {
     alignSelf: "stretch",
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   key: {
     width: keyWidth - 4,
@@ -22,10 +22,10 @@ export default StyleSheet.create({
     borderRadius: 5,
     backgroundColor: colors.grey,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
   keyText: {
     color: colors.lightgrey,
-    fontWeight: "bold",
-  },
+    fontWeight: "bold"
+  }
 });

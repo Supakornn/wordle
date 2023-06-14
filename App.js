@@ -39,8 +39,17 @@ const styles = StyleSheet.create({
   },
   map: {
     backgroundColor: "red",
-    alignSelf: "stretch"
+    alignSelf: "stretch",
+    height: 100
   },
-  row: {},
-  cell: {}
+  row: {
+    backgroundColor: "blue",
+    alignSelf: "stretch",
+    height: 50
+  },
+  cell: {
+    backgroundColor: "green",
+    height: 30,
+    width: 30
+  }
 });
