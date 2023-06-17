@@ -1,28 +1,21 @@
-import { StyleSheet, Text, View, ScrollView, Alert } from "react-native";
+import { StyleSheet, Text, View, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { useState, useEffect } from "react";
 import { colors, CLEAR, ENTER, colorsToEmoji } from "../../constants";
 import Keyboard from "../Keyboard/Keyboard";
 import * as Clipboard from "expo-clipboard";
 import words from "../../words";
+import styles from "./Game.styles";
+import { getDayOfTheYear, copyArray, getDayKey } from "../../utils";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import EndScreen from "../EndScreen/EndScreen";
 
 const NUMBER_OF_TRIES = 6;
 
-const copyArray = (arr) => {
-  return [...arr.map((rows) => [...rows])];
-};
-
-const getDayOfTheYear = () => {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now - start;
-  const oneDay = 1000 * 60 * 60 * 24;
-  const day = Math.floor(diff / oneDay);
-  return day;
-};
-
 const dayOfTheYear = getDayOfTheYear();
+const daykey = getDayKey();
 
 const Game = () => {
+  // AsyncStorage.clear();
   const word = words[dayOfTheYear];
   const letters = word.split("");
   const [rows, setRows] = useState(
@@ -31,12 +24,60 @@ const Game = () => {
   const [curRow, setCurRow] = useState(0);
   const [curCol, setCurCol] = useState(0);
   const [gameState, setGameState] = useState("playing");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (curRow > 0) {
       checkGameState();
     }
   }, [curRow]);
+
+  useEffect(() => {
+    if (loaded) {
+      persistState();
+    }
+  }, [rows, curRow, curCol, gameState]);
+
+  useEffect(() => {
+    readState();
+  }, []);
+
+  const persistState = async () => {
+    const dataForToday = {
+      rows,
+      curRow,
+      curCol,
+      gameState
+    };
+
+    try {
+      let existingStateString = await AsyncStorage.getItem("@game");
+      const existingState = existingState ? JSON.parse(existingStateString) : {};
+
+      existingState[daykey] = dataForToday;
+
+      const dataString = JSON.stringify(existingState);
+      console.log("Saving", dataString);
+      await AsyncStorage.setItem("@game", dataString);
+    } catch (error) {
+      console.log("Cant save data", error);
+    }
+  };
+
+  const readState = async () => {
+    const dataString = await AsyncStorage.getItem("@game");
+    try {
+      const data = JSON.parse(dataString);
+      const day = data[daykey];
+      setRows(day.rows);
+      setCurRow(day.curRow);
+      setCurCol(day.curCol);
+      setGameState(day.gameState);
+    } catch (error) {
+      console.log("Cant parse data");
+    }
+    setLoaded(true);
+  };
 
   const checkGameState = () => {
     if (checkIfWon() && gameState !== "won") {
@@ -124,6 +165,13 @@ const Game = () => {
   const yellowCaps = getAllLettersWithColor(colors.secondary);
   const greyCaps = getAllLettersWithColor(colors.darkgrey);
 
+  if (!loaded) {
+    return <ActivityIndicator />;
+  }
+
+  if (gameState !== "playing") {
+    return <EndScreen won={gameState === "won"} />;
+  }
   return (
     <>
       <Text style={styles.title}>WORDLE</Text>
@@ -157,32 +205,5 @@ const Game = () => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  map: {
-    alignSelf: "stretch",
-    marginVertical: 20
-  },
-  row: {
-    alignSelf: "stretch",
-    flexDirection: "row",
-    justifyContent: "center"
-  },
-  cell: {
-    borderWidth: 3,
-    borderColor: colors.darkgrey,
-    flex: 1,
-    maxWidth: 70,
-    aspectRatio: 1,
-    margin: 3,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  cellText: {
-    color: colors.lightgrey,
-    fontWeight: "bold",
-    fontSize: 20
-  }
-});
 
 export default Game;

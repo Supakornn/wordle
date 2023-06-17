@@ -1,5 +1,4 @@
 node_modules/
-./src/words.js
 .expo/
 dist/
 npm-debug.*
