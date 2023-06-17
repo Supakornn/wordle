@@ -8,6 +8,7 @@ import styles from "./Game.styles";
 import { getDayOfTheYear, copyArray, getDayKey } from "../../utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import EndScreen from "../EndScreen/EndScreen";
+import Animated, { SlideInDown, SlideInLeft, ZoomIn, FlipInEasyY } from "react-native-reanimated";
 
 const NUMBER_OF_TRIES = 6;
 
@@ -40,6 +41,8 @@ const Game = () => {
 
   useEffect(() => {
     readState();
+    console.log(word);
+    console.log(letters);
   }, []);
 
   const persistState = async () => {
@@ -57,7 +60,6 @@ const Game = () => {
       existingState[daykey] = dataForToday;
 
       const dataString = JSON.stringify(existingState);
-      console.log("Saving", dataString);
       await AsyncStorage.setItem("@game", dataString);
     } catch (error) {
       console.log("Cant save data", error);
@@ -152,6 +154,14 @@ const Game = () => {
   const yellowCaps = getAllLettersWithColor(colors.secondary);
   const greyCaps = getAllLettersWithColor(colors.darkgrey);
 
+  const getCellStyle = (i, j) => [
+    styles.cell,
+    {
+      borderColor: isCellActive(i, j) ? colors.grey : colors.darkgrey,
+      backgroundColor: getCellBGColor(i, j)
+    }
+  ];
+
   if (!loaded) {
     return <ActivityIndicator />;
   }
@@ -163,22 +173,35 @@ const Game = () => {
     <>
       <ScrollView style={styles.map}>
         {rows.map((row, i) => (
-          <View key={`row-${i}`} style={styles.row}>
+          <Animated.View entering={SlideInLeft.delay(i * 20)} key={`row-${i}`} style={styles.row}>
             {row.map((letter, j) => (
-              <View
-                key={`cell-${i}-${j}`}
-                style={[
-                  styles.cell,
-                  {
-                    borderColor: isCellActive(i, j) ? colors.lightgrey : colors.darkgrey,
-                    backgroundColor: getCellBGColor(i, j)
-                  }
-                ]}
-              >
-                <Text style={styles.cellText}>{letter.toUpperCase()}</Text>
-              </View>
+              <>
+                {i < curRow && (
+                  <Animated.View
+                    entering={FlipInEasyY.delay(j * 100)}
+                    key={`cell-color-${i}-${j}`}
+                    style={getCellStyle(i, j)}
+                  >
+                    <Text style={styles.cellText}>{letter.toUpperCase()}</Text>
+                  </Animated.View>
+                )}
+                {i === curRow && !!letter && (
+                  <Animated.View
+                    entering={ZoomIn}
+                    key={`cell-active-${i}-${j}`}
+                    style={getCellStyle(i, j)}
+                  >
+                    <Text style={styles.cellText}>{letter.toUpperCase()}</Text>
+                  </Animated.View>
+                )}
+                {!letter && (
+                  <View key={`cell-${i}-${j}`} style={getCellStyle(i, j)}>
+                    <Text style={styles.cellText}>{letter.toUpperCase()}</Text>
+                  </View>
+                )}
+              </>
             ))}
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
 

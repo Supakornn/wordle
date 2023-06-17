@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { colors, colorsToEmoji } from "../../constants";
 import * as Clipboard from "expo-clipboard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Animated, { SlideInDown, SlideInLeft, ZoomIn, FlipInEasyY } from "react-native-reanimated";
 
 const Number = ({ number, label }) => (
   <View style={{ alignItems: "center", margin: 10 }}>
@@ -21,7 +22,8 @@ const GuessDistributionLine = ({ position, amount, percentage }) => {
           margin: 5,
           padding: 5,
           alignSelf: "stretch",
-          width: `${percentage}%`
+          width: `${percentage}%`,
+          minWidth: 20
         }}
       >
         <Text style={{ color: colors.lightgrey }}>{amount}</Text>
@@ -30,13 +32,21 @@ const GuessDistributionLine = ({ position, amount, percentage }) => {
   );
 };
 
-const GuessDistribution = () => {
+const GuessDistribution = ({ distribution }) => {
+  if (!distribution) return null;
+  const sum = distribution.reduce((total, dist) => dist + total, 0);
   return (
     <>
       <Text style={styles.subtitle}>GUESS DISTRIBUTION</Text>
       <View style={{ width: "100%", padding: 20 }}>
-        <GuessDistributionLine position={1} amount={0} percentage={50} />
-        <GuessDistributionLine position={2} amount={0} percentage={100} />
+        {distribution.map((dist, i) => (
+          <GuessDistributionLine
+            key={i}
+            position={i + 1}
+            amount={dist}
+            percentage={(100 * dist) / sum}
+          />
+        ))}
       </View>
     </>
   );
@@ -48,10 +58,10 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
   const [winRate, setWinRate] = useState(0);
   const [curStreak, setCurStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
+  const [distribution, setDistribution] = useState(null);
 
   useEffect(() => {
     readState();
-    console.log(maxStreak);
   }, []);
 
   const share = () => {
@@ -108,7 +118,18 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
     });
     setCurStreak(_curStreak);
     setMaxStreak(maxStreak);
+
+    const dist = [0, 0, 0, 0, 0, 0];
+    values.map((game) => {
+      if (game.gameState === "won") {
+        const tries = game.rows.filter((row) => row[0]).length;
+        dist[tries] = dist[tries] + 1;
+      }
+    });
+    setDistribution(dist);
   };
+
+  const dist = [0, 0, 0, 0, 0, 0];
 
   const formatSeconds = () => {
     const hours = Math.floor(secondsTillTomorrow / (60 * 60));
@@ -119,17 +140,31 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
   };
   return (
     <View style={{ width: "100%", alignItems: "center" }}>
-      <Text style={styles.title}>{won ? "Congrats!" : "Meh, Try again tomorrow"}</Text>
-      <Text style={styles.subtitle}>STATISTICS</Text>
-      <View style={{ flexDirection: "row", marginBottom: 20 }}>
-        <Number number={played} label={"Played"} />
-        <Number number={winRate} label={"win %"} />
-        <Number number={curStreak} label={"Cur streak"} />
-        <Number number={maxStreak} label={"Max streak"} />
-      </View>
-      <GuessDistribution />
+      <Animated.Text entering={SlideInLeft.springify().mass(0.5)} style={styles.title}>
+        {won ? "Congrats!" : "Meh, Try again tomorrow"}
+      </Animated.Text>
 
-      <View style={{ flexDirection: "row", padding: 10 }}>
+      <Animated.View entering={SlideInLeft.delay(100).springify().mass(0.5)}>
+        <Text style={styles.subtitle}>STATISTICS</Text>
+        <View style={{ flexDirection: "row", marginBottom: 20 }}>
+          <Number number={played} label={"Played"} />
+          <Number number={winRate} label={"win %"} />
+          <Number number={curStreak} label={"Cur streak"} />
+          <Number number={maxStreak} label={"Max streak"} />
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        entering={SlideInLeft.delay(200).springify().mass(0.5)}
+        style={{ width: "100%" }}
+      >
+        <GuessDistribution distribution={distribution} />
+      </Animated.View>
+
+      <Animated.View
+        entering={SlideInLeft.delay(200).springify().mass(0.5)}
+        style={{ flexDirection: "row", padding: 10 }}
+      >
         <View style={{ alignItems: "center", flex: 1 }}>
           <Text style={{ color: colors.lightgrey }}>Next Wordle</Text>
           <Text style={{ color: colors.lightgrey, fontSize: 24, fontWeight: "bold" }}>
@@ -149,7 +184,7 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
         >
           <Text style={{ color: colors.lightgrey, fontWeight: "bold" }}>Share</Text>
         </Pressable>
-      </View>
+      </Animated.View>
     </View>
   );
 };
