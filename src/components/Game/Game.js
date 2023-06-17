@@ -52,7 +52,7 @@ const Game = () => {
 
     try {
       let existingStateString = await AsyncStorage.getItem("@game");
-      const existingState = existingState ? JSON.parse(existingStateString) : {};
+      const existingState = existingStateString ? JSON.parse(existingStateString) : {};
 
       existingState[daykey] = dataForToday;
 
@@ -161,7 +161,6 @@ const Game = () => {
   }
   return (
     <>
-      <Text style={styles.title}>WORDLE</Text>
       <ScrollView style={styles.map}>
         {rows.map((row, i) => (
           <View key={`row-${i}`} style={styles.row}>

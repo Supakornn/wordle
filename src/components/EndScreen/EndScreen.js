@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { colors, colorsToEmoji } from "../../constants";
 import * as Clipboard from "expo-clipboard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Number = ({ number, label }) => (
   <View style={{ alignItems: "center", margin: 10 }}>
@@ -48,6 +49,11 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
   const [curStreak, setCurStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
 
+  useEffect(() => {
+    readState();
+    console.log(maxStreak);
+  }, []);
+
   const share = () => {
     const textMap = rows
       .map((row, i) => row.map((cell, j) => colorsToEmoji[getCellBGColor(i, j)]).join(""))
@@ -71,12 +77,37 @@ const EndScreen = ({ won = false, rows, getCellBGColor }) => {
 
   const readState = async () => {
     const dataString = await AsyncStorage.getItem("@game");
+    let data;
     try {
-      const data = JSON.parse(dataString);
+      data = JSON.parse(dataString);
     } catch (error) {
       console.log("Cant parse data");
     }
-    setLoaded(true);
+    const keys = Object.keys(data);
+    const values = Object.values(data);
+    setPlayed(keys.length);
+
+    const numberOfWins = values.filter((game) => game.gameState === "won").length;
+    setWinRate(Math.floor((100 * numberOfWins) / keys.length));
+    let _curStreak = 0;
+    let maxStreak = 0;
+    let prevDay = 0;
+    keys.forEach((key) => {
+      const day = parseInt(key.split("-")[1]);
+      if (data[key].gameState === "won" && _curStreak === 0) {
+        _curStreak += 1;
+      } else if (data[key].gameState === "won" && prevDay + 1 === day) {
+        _curStreak += 1;
+      } else {
+        if (_curStreak > maxStreak) {
+          maxStreak = _curStreak;
+        }
+        _curStreak = data[key].gameState === "won" ? 1 : 0;
+      }
+      prevDay = day;
+    });
+    setCurStreak(_curStreak);
+    setMaxStreak(maxStreak);
   };
 
   const formatSeconds = () => {
